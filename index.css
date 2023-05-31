@@ -1,0 +1,7 @@
+#root {
+    display: grid;
+    grid-template-columns: repeat(8,1fr);
+    max-width: 640px;
+    max-height: 640px;
+    margin: 0 auto;
+}
