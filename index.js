@@ -53,8 +53,8 @@ class Piece {
     if (turn === "white") king = kw;
     const checkingPieces = isCheck(king);
     console.log(checkingPieces);
-    if (checkingPieces.length > 1)
-      return calculateKingMoves(king, checkingPieces);
+    // if (checkingPieces.length > 1)
+    //   return calculateKingMoves(king, checkingPieces);
     let pieceName = this.name.split(" ")[0];
     switch (pieceName) {
       case "Pawn":
@@ -190,8 +190,8 @@ const px4 = new Piece(
 );
 const px5 = new Piece(
   "black",
-  { x:3, y: 5 },
-  { x:3, y: 5 },
+  { x: 3, y: 5 },
+  { x: 3, y: 5 },
   [],
   "./media/b_pawn.svg",
   "Pawn Black 5",
@@ -445,6 +445,7 @@ const calculatePawnMoves = (obj) => {
     if (capture1.capturable) obj.moves.push(capture1);
     if (capture2.capturable) obj.moves.push(capture2);
   }
+  obj.moves = obj.moves.filter((e) => e.x > 0 && e.x < 9 && e.y > 0 && e.y < 9);
   const directions = { moves: obj.moves };
   const newDirections = sortDirections(directions, obj);
   const filteredMoves = filterMoves(newDirections, obj);
@@ -493,20 +494,8 @@ const calculateKingMoves = (obj) => {
   moves.push({ x: currentPos.x + 1, y: currentPos.y - 1 });
   moves.push({ x: currentPos.x - 1, y: currentPos.y + 1 });
   moves = moves.filter((e) => e.x > 0 && e.x < 9 && e.y > 0 && e.y < 9);
-  const oppPieceArr = piecesArr.filter((e) => e.color !== obj.color);
-  moves.forEach((e) => {
-    for (const piece of oppPieceArr) {
-      const possibleCheck = piece.moves.filter(m => m.x == e.x && m.y == e.y );
-      if(!possibleCheck.length) {
-        if(!newMoves.filter(nm => nm.x == e.x && nm.y == e.y).length) {
-          console.log(newMoves);
-          console.log(e);
-          newMoves.push(e);
-        }
-      }
-    }
-   obj.moves = newMoves;
-  });
+  obj.moves = (findKingMoves({moves: moves, color: obj.color}));
+
   obj.validMoves = kFilterMoves(obj);
 };
 
@@ -660,6 +649,7 @@ const filterMoves = (directions, obj) => {
             capturable: true,
           });
         }
+        if(box.dataset.code == "kw" || box.dataset.code == "kb") continue;
         break;
       }
       filteredMoves.push(move);
@@ -712,26 +702,8 @@ const kFilterMoves = (obj) => {
 const pawnCaptureMoves = (obj, mul) => {
   const capture1 = { x: obj.currentPos.x - 1 * mul, y: obj.currentPos.y + 1 };
   const capture2 = { x: obj.currentPos.x - 1 * mul, y: obj.currentPos.y - 1 };
-  if (capture1.x > 0 && capture1.x < 9 && capture1.y > 0 && capture1.y < 9) {
-    const box1 = document.querySelector(
-      `[data-cords="${capture1.x},${capture1.y}"]`
-    );
-    const boxPieceColor1 = box1.dataset.color;
-    if (boxPieceColor1 !== obj.color && boxPieceColor1 !== undefined)
-      capture1.capturable = true;
-  } else {
-    capture1.capturable = false;
-  }
-  if (capture2.x > 0 && capture2.x < 9 && capture2.y > 0 && capture2.y < 9) {
-    const box2 = document.querySelector(
-      `[data-cords="${capture2.x},${capture2.y}"]`
-    );
-    const boxPieceColor2 = box2.dataset.color;
-    if (boxPieceColor2 !== obj.color && boxPieceColor2 !== undefined)
-      capture2.capturable = true;
-  } else {
-    capture2.capturable = false;
-  }
+  capture1.capturable = true;
+  capture2.capturable = true;
   return { capture1, capture2 };
 };
 
@@ -773,3 +745,23 @@ class Player {
     }
   }
 }
+
+const findKingMoves = ({moves,color}) => {
+  let oppPieceArr = piecesArr.filter((e) => e.color !== color);
+  moves.forEach((e) => {
+    for (const piece of oppPieceArr) {
+      let possibleCheck = [];
+      if (piece.name.includes("Pawn")) {
+        possibleCheck = piece.validMoves.filter(
+          (m) => m.x == e.x && m.y == e.y && m.capturable
+        );
+      } else {
+        possibleCheck = piece.validMoves.filter((m) => m.x == e.x && m.y == e.y);
+      }
+      if (possibleCheck.length) {
+       e.check = true;
+      }
+    }
+  });
+  return(moves);
+};
