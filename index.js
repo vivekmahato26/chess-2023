@@ -47,6 +47,14 @@ class Piece {
   };
 
   calculateMoves = () => {
+    let turn = "white";
+    let king;
+    if (turn === "black") king = kb;
+    if (turn === "white") king = kw;
+    const checkingPieces = isCheck(king);
+    console.log(checkingPieces);
+    if (checkingPieces.length > 1)
+      return calculateKingMoves(king, checkingPieces);
     let pieceName = this.name.split(" ")[0];
     switch (pieceName) {
       case "Pawn":
@@ -82,8 +90,8 @@ const rx1 = new Piece(
 );
 const rx2 = new Piece(
   "black",
-  { x: 1, y: 8 },
-  { x: 1, y: 8 },
+  { x: 5, y: 8 },
+  { x: 5, y: 8 },
   [],
   "./media/b_rook.svg",
   "Rook Black 2",
@@ -100,8 +108,8 @@ const kx1 = new Piece(
 );
 const kx2 = new Piece(
   "black",
-  { x: 1, y: 7 },
-  { x: 1, y: 7 },
+  { x: 3, y: 6 },
+  { x: 3, y: 6 },
   [],
   "./media/b_knight.svg",
   "Knight Black 2",
@@ -182,8 +190,8 @@ const px4 = new Piece(
 );
 const px5 = new Piece(
   "black",
-  { x: 2, y: 5 },
-  { x: 2, y: 5 },
+  { x:3, y: 5 },
+  { x:3, y: 5 },
   [],
   "./media/b_pawn.svg",
   "Pawn Black 5",
@@ -345,8 +353,8 @@ const b2 = new Piece(
 );
 const kw = new Piece(
   "white",
-  { x: 8, y: 5 },
-  { x: 8, y: 5 },
+  { x: 5, y: 5 },
+  { x: 5, y: 5 },
   [],
   "./media/w_king.svg",
   "King White",
@@ -415,6 +423,9 @@ const calculatePawnMoves = (obj) => {
       x: obj.currentPos.x + 1,
       y: obj.currentPos.y,
     });
+    const { capture1, capture2 } = pawnCaptureMoves(obj, -1);
+    if (capture1.capturable) obj.moves.push(capture1);
+    if (capture2.capturable) obj.moves.push(capture2);
   }
   if (obj.color === "white") {
     if (
@@ -430,6 +441,9 @@ const calculatePawnMoves = (obj) => {
       x: obj.currentPos.x - 1,
       y: obj.currentPos.y,
     });
+    const { capture1, capture2 } = pawnCaptureMoves(obj, 1);
+    if (capture1.capturable) obj.moves.push(capture1);
+    if (capture2.capturable) obj.moves.push(capture2);
   }
   const directions = { moves: obj.moves };
   const newDirections = sortDirections(directions, obj);
@@ -467,16 +481,32 @@ const hideMoves = (event, obj) => {
 
 const calculateKingMoves = (obj) => {
   obj.moves = [];
+  let moves = [];
+  let newMoves = [];
   const { currentPos } = obj;
-  obj.moves.push({ x: currentPos.x + 1, y: currentPos.y + 1 });
-  obj.moves.push({ x: currentPos.x - 1, y: currentPos.y - 1 });
-  obj.moves.push({ x: currentPos.x + 1, y: currentPos.y });
-  obj.moves.push({ x: currentPos.x, y: currentPos.y + 1 });
-  obj.moves.push({ x: currentPos.x - 1, y: currentPos.y });
-  obj.moves.push({ x: currentPos.x, y: currentPos.y - 1 });
-  obj.moves.push({ x: currentPos.x + 1, y: currentPos.y - 1 });
-  obj.moves.push({ x: currentPos.x - 1, y: currentPos.y + 1 });
-  obj.moves = obj.moves.filter((e) => e.x > 0 && e.x < 9 && e.y > 0 && e.y < 9);
+  moves.push({ x: currentPos.x + 1, y: currentPos.y + 1 });
+  moves.push({ x: currentPos.x - 1, y: currentPos.y - 1 });
+  moves.push({ x: currentPos.x + 1, y: currentPos.y });
+  moves.push({ x: currentPos.x, y: currentPos.y + 1 });
+  moves.push({ x: currentPos.x - 1, y: currentPos.y });
+  moves.push({ x: currentPos.x, y: currentPos.y - 1 });
+  moves.push({ x: currentPos.x + 1, y: currentPos.y - 1 });
+  moves.push({ x: currentPos.x - 1, y: currentPos.y + 1 });
+  moves = moves.filter((e) => e.x > 0 && e.x < 9 && e.y > 0 && e.y < 9);
+  const oppPieceArr = piecesArr.filter((e) => e.color !== obj.color);
+  moves.forEach((e) => {
+    for (const piece of oppPieceArr) {
+      const possibleCheck = piece.moves.filter(m => m.x == e.x && m.y == e.y );
+      if(!possibleCheck.length) {
+        if(!newMoves.filter(nm => nm.x == e.x && nm.y == e.y).length) {
+          console.log(newMoves);
+          console.log(e);
+          newMoves.push(e);
+        }
+      }
+    }
+   obj.moves = newMoves;
+  });
   obj.validMoves = kFilterMoves(obj);
 };
 
@@ -622,6 +652,7 @@ const filterMoves = (directions, obj) => {
       const box = document.querySelector(`[data-cords="${move.x},${move.y}"]`);
       const boxPieceColor = box.dataset.color; // box.getAttribute("data-color");
       if (boxPieceColor) {
+        if (obj.name.includes("Pawn")) break;
         const { color } = obj;
         if (color !== boxPieceColor) {
           filteredMoves.push({
@@ -677,3 +708,68 @@ const kFilterMoves = (obj) => {
   }
   return filteredMoves;
 };
+
+const pawnCaptureMoves = (obj, mul) => {
+  const capture1 = { x: obj.currentPos.x - 1 * mul, y: obj.currentPos.y + 1 };
+  const capture2 = { x: obj.currentPos.x - 1 * mul, y: obj.currentPos.y - 1 };
+  if (capture1.x > 0 && capture1.x < 9 && capture1.y > 0 && capture1.y < 9) {
+    const box1 = document.querySelector(
+      `[data-cords="${capture1.x},${capture1.y}"]`
+    );
+    const boxPieceColor1 = box1.dataset.color;
+    if (boxPieceColor1 !== obj.color && boxPieceColor1 !== undefined)
+      capture1.capturable = true;
+  } else {
+    capture1.capturable = false;
+  }
+  if (capture2.x > 0 && capture2.x < 9 && capture2.y > 0 && capture2.y < 9) {
+    const box2 = document.querySelector(
+      `[data-cords="${capture2.x},${capture2.y}"]`
+    );
+    const boxPieceColor2 = box2.dataset.color;
+    if (boxPieceColor2 !== obj.color && boxPieceColor2 !== undefined)
+      capture2.capturable = true;
+  } else {
+    capture2.capturable = false;
+  }
+  return { capture1, capture2 };
+};
+
+const isCheck = (obj) => {
+  const oppPieceArr = piecesArr.filter(
+    (e) => e.color !== obj.color && !e.name.includes("King")
+  );
+
+  const checkingPieces = [];
+  for (const p of oppPieceArr) {
+    const captureMoves = p.validMoves.filter((e) => e.capturable);
+    for (const move of captureMoves) {
+      if (move.x == obj.currentPos.x && move.y == obj.currentPos.y) {
+        checkingPieces.push(p);
+        break;
+      }
+    }
+  }
+  return checkingPieces;
+};
+
+class Player {
+  constructor(name, time, color, turn) {
+    this.name = name;
+    this.time = time;
+    this.color = color;
+    this.turn = turn;
+    this.check = false;
+    this.mate = false;
+  }
+
+  static changeTurn(player1, player2) {
+    if (player1.turn) {
+      player1.turn = false;
+      player2.turn = true;
+    } else {
+      player1.turn = true;
+      player2.turn = false;
+    }
+  }
+}
