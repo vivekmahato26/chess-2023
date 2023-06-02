@@ -20,6 +20,364 @@ const root = document.getElementById("root");
   }
 })();
 
+const calculatePawnMoves = (obj) => {
+  obj.moves = [];
+  if (obj.color === "black") {
+    if (
+      obj.initialPos.x === obj.currentPos.x &&
+      obj.initialPos.y === obj.currentPos.y
+    ) {
+      obj.moves.push({
+        x: obj.currentPos.x + 2,
+        y: obj.currentPos.y,
+      });
+    }
+    obj.moves.push({
+      x: obj.currentPos.x + 1,
+      y: obj.currentPos.y,
+    });
+    const { capture1, capture2 } = pawnCaptureMoves(obj, -1);
+    if (capture1.capturable) obj.moves.push(capture1);
+    if (capture2.capturable) obj.moves.push(capture2);
+  }
+  if (obj.color === "white") {
+    if (
+      obj.initialPos.x === obj.currentPos.x &&
+      obj.initialPos.y === obj.currentPos.y
+    ) {
+      obj.moves.push({
+        x: obj.currentPos.x - 2,
+        y: obj.currentPos.y,
+      });
+    }
+    obj.moves.push({
+      x: obj.currentPos.x - 1,
+      y: obj.currentPos.y,
+    });
+    const { capture1, capture2 } = pawnCaptureMoves(obj, 1);
+    if (capture1.capturable) obj.moves.push(capture1);
+    if (capture2.capturable) obj.moves.push(capture2);
+  }
+  obj.moves = obj.moves.filter((e) => e.x > 0 && e.x < 9 && e.y > 0 && e.y < 9);
+  const directions = { moves: obj.moves };
+  const newDirections = sortDirections(directions, obj);
+  const filteredMoves = filterMoves(newDirections, obj);
+  obj.validMoves = filteredMoves;
+};
+
+const showMoves = (event, obj) => {
+  // obj.calculateMoves();
+  const { validMoves } = obj;
+
+  validMoves.forEach((e) => {
+    const box = document.querySelector(`[data-cords="${e.x},${e.y}"]`);
+    box.style.backgroundColor = "rgba(27, 156, 252,0.2)";
+    if (e.capturable) {
+      box.style.backgroundColor = "rgba(231, 76, 60,0.7)";
+    }
+    if (e.check) {
+      box.style.backgroundColor = "rgba(231, 76, 60,1)";
+    }
+  });
+};
+
+const hideMoves = (event, obj) => {
+  const { validMoves } = obj;
+  validMoves.forEach((e) => {
+    const box = document.querySelector(`[data-cords="${e.x},${e.y}"]`);
+    if ((e.x + e.y) % 2) {
+      box.style.backgroundColor = "#8bc34ac7";
+    } else {
+      box.style.backgroundColor = "#ffff004d";
+    }
+  });
+};
+
+const calculateKingMoves = (obj) => {
+  obj.moves = [];
+  let moves = [];
+  let newMoves = [];
+  const { currentPos } = obj;
+  moves.push({ x: currentPos.x + 1, y: currentPos.y + 1 });
+  moves.push({ x: currentPos.x - 1, y: currentPos.y - 1 });
+  moves.push({ x: currentPos.x + 1, y: currentPos.y });
+  moves.push({ x: currentPos.x, y: currentPos.y + 1 });
+  moves.push({ x: currentPos.x - 1, y: currentPos.y });
+  moves.push({ x: currentPos.x, y: currentPos.y - 1 });
+  moves.push({ x: currentPos.x + 1, y: currentPos.y - 1 });
+  moves.push({ x: currentPos.x - 1, y: currentPos.y + 1 });
+  moves = moves.filter((e) => e.x > 0 && e.x < 9 && e.y > 0 && e.y < 9);
+  obj.moves = (findKingMoves({moves: moves, color: obj.color}));
+
+  obj.validMoves = kFilterMoves(obj);
+};
+
+const calculateKnightMoves = (obj) => {
+  obj.moves = [];
+  const { currentPos } = obj;
+  obj.moves.push({ x: currentPos.x + 2, y: currentPos.y + 1 });
+  obj.moves.push({ x: currentPos.x + 2, y: currentPos.y - 1 });
+  obj.moves.push({ x: currentPos.x + 1, y: currentPos.y + 2 });
+  obj.moves.push({ x: currentPos.x - 1, y: currentPos.y + 2 });
+  obj.moves.push({ x: currentPos.x - 2, y: currentPos.y + 1 });
+  obj.moves.push({ x: currentPos.x - 2, y: currentPos.y - 1 });
+  obj.moves.push({ x: currentPos.x + 1, y: currentPos.y - 2 });
+  obj.moves.push({ x: currentPos.x - 1, y: currentPos.y - 2 });
+  obj.moves = obj.moves.filter((e) => e.x > 0 && e.x < 9 && e.y > 0 && e.y < 9);
+  obj.validMoves = kFilterMoves(obj);
+};
+
+const calculateRookMoves = (obj) => {
+  obj.moves = [];
+  const { currentPos } = obj;
+  for (let i = 1; i < 8; i++) {
+    let newX = currentPos.x + i;
+    if (newX > 8) {
+      newX = newX - 8;
+    }
+    obj.moves.push({ x: newX, y: currentPos.y });
+  }
+  for (let i = 1; i < 8; i++) {
+    let newY = currentPos.y + i;
+    if (newY > 8) {
+      newY = newY - 8;
+    }
+    obj.moves.push({ y: newY, x: currentPos.x });
+  }
+  const directions = splitRookDirections(obj);
+  const newDir = sortDirections(directions, obj);
+  const filteredMoves = filterMoves(newDir, obj);
+  obj.validMoves = filteredMoves;
+};
+
+const calculateBishopMoves = (obj) => {
+  obj.moves = [];
+  const { currentPos } = obj;
+  let move = 1;
+  while (move < 8) {
+    obj.moves.push({
+      x: currentPos.x + move,
+      y: currentPos.y + move,
+    });
+    move++;
+  }
+  move = 1;
+  while (move < 8) {
+    obj.moves.push({
+      x: currentPos.x - move,
+      y: currentPos.y - move,
+    });
+    move++;
+  }
+  move = 1;
+  while (move < 8) {
+    obj.moves.push({
+      x: currentPos.x + move,
+      y: currentPos.y - move,
+    });
+    move++;
+  }
+  move = 1;
+  while (move < 8) {
+    obj.moves.push({
+      x: currentPos.x - move,
+      y: currentPos.y + move,
+    });
+    move++;
+  }
+  obj.moves = obj.moves.filter((e) => e.x > 0 && e.x < 9 && e.y > 0 && e.y < 9);
+  const directions = splitBishopDirection(obj);
+  const newDir = sortDirections(directions, obj);
+  const filteredMoves = filterMoves(newDir, obj);
+  obj.validMoves = filteredMoves;
+};
+
+const calculateQueenMoves = (obj) => {
+  calculateBishopMoves(obj);
+  const { currentPos } = obj;
+  for (let i = 1; i < 8; i++) {
+    let newX = currentPos.x + i;
+    if (newX > 8) {
+      newX = newX - 8;
+    }
+    obj.moves.push({ x: newX, y: currentPos.y });
+  }
+  for (let i = 1; i < 8; i++) {
+    let newY = currentPos.y + i;
+    if (newY > 8) {
+      newY = newY - 8;
+    }
+    obj.moves.push({ y: newY, x: currentPos.x });
+  }
+  const directions = splitQueenDirection(obj);
+  const newDir = sortDirections(directions, obj);
+  const filteredMoves = filterMoves(newDir, obj);
+  obj.validMoves = filteredMoves;
+};
+
+const splitRookDirections = (obj) => {
+  const { moves } = obj;
+  const up = [],
+    down = [],
+    right = [],
+    left = [];
+  for (const m of moves) {
+    if (m.x < obj.currentPos.x && m.y === obj.currentPos.y) up.push(m);
+    if (m.x > obj.currentPos.x && m.y === obj.currentPos.y) down.push(m);
+    if (m.x === obj.currentPos.x && m.y < obj.currentPos.y) left.push(m);
+    if (m.x === obj.currentPos.x && m.y > obj.currentPos.y) right.push(m);
+  }
+  return { up, down, left, right };
+};
+
+const sortDirections = (directions, obj) => {
+  // sortFunction({x:1,y:1},{x:3,y:4},{currentPos:{x:2,y:2}})
+  const newDir = {};
+  for (const key in directions) {
+    newDir[key] = directions[key].sort((a, b) => sortFunction(b, a, obj));
+  }
+  return newDir;
+};
+
+const sortFunction = (p1, p2, obj) => {
+  return distacne(p2, obj.currentPos) - distacne(p1, obj.currentPos);
+};
+
+const distacne = (a, b) => {
+  return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
+};
+
+const filterMoves = (directions, obj) => {
+  let filteredMoves = [];
+  for (const key in directions) {
+    for (const move of directions[key]) {
+      const box = document.querySelector(`[data-cords="${move.x},${move.y}"]`);
+      const boxPieceColor = box.dataset.color; // box.getAttribute("data-color");
+      if (boxPieceColor) {
+        if (obj.name.includes("Pawn")) break;
+        const { color } = obj;
+        if (color !== boxPieceColor) {
+          filteredMoves.push({
+            ...move,
+            capturable: true,
+          });
+        }
+        if(box.dataset.code == "kw" || box.dataset.code == "kb") continue;
+        break;
+      }
+      filteredMoves.push(move);
+    }
+  }
+  return filteredMoves;
+};
+
+const splitBishopDirection = ({ moves, currentPos }) => {
+  const ur = [],
+    ul = [],
+    dr = [],
+    dl = [];
+  moves.forEach((e) => {
+    if (currentPos.x < e.x && currentPos.y > e.y) ur.push(e);
+    if (currentPos.x < e.x && currentPos.y < e.y) ul.push(e);
+    if (currentPos.x > e.x && currentPos.y > e.y) dr.push(e);
+    if (currentPos.x > e.x && currentPos.y < e.y) dl.push(e);
+  });
+  return { ur, ul, dr, dl };
+};
+
+const splitQueenDirection = ({ moves, currentPos }) => {
+  const obj = { moves, currentPos };
+  const vhDir = splitRookDirections({ moves, currentPos }); // { up, down, left, right }
+  const diagDir = splitBishopDirection(obj); // {ur,ul,dr,dl}
+  return { ...vhDir, ...diagDir };
+};
+
+const kFilterMoves = (obj) => {
+  let filteredMoves = [];
+  for (const move of obj.moves) {
+    const box = document.querySelector(`[data-cords="${move.x},${move.y}"]`);
+    const boxPieceColor = box.dataset.color; // box.getAttribute("data-color");
+    if (boxPieceColor) {
+      const { color } = obj;
+      if (color !== boxPieceColor) {
+        filteredMoves.push({
+          ...move,
+          capturable: true,
+        });
+      }
+    } else {
+      filteredMoves.push(move);
+    }
+  }
+  return filteredMoves;
+};
+
+const pawnCaptureMoves = (obj, mul) => {
+  const capture1 = { x: obj.currentPos.x - 1 * mul, y: obj.currentPos.y + 1 };
+  const capture2 = { x: obj.currentPos.x - 1 * mul, y: obj.currentPos.y - 1 };
+  capture1.capturable = true;
+  capture2.capturable = true;
+  return { capture1, capture2 };
+};
+
+const isCheck = (obj) => {
+  const oppPieceArr = piecesArr.filter(
+    (e) => e.color !== obj.color && !e.name.includes("King")
+  );
+
+  const checkingPieces = [];
+  for (const p of oppPieceArr) {
+    const captureMoves = p.validMoves.filter((e) => e.capturable);
+    for (const move of captureMoves) {
+      if (move.x == obj.currentPos.x && move.y == obj.currentPos.y) {
+        checkingPieces.push(p);
+        break;
+      }
+    }
+  }
+  return checkingPieces;
+};
+
+class Player {
+  constructor(name, time, color, turn) {
+    this.name = name;
+    this.time = time;
+    this.color = color;
+    this.turn = turn;
+    this.check = false;
+    this.mate = false;
+  }
+
+  static changeTurn(player1, player2) {
+    if (player1.turn) {
+      player1.turn = false;
+      player2.turn = true;
+    } else {
+      player1.turn = true;
+      player2.turn = false;
+    }
+  }
+}
+
+const findKingMoves = ({moves,color}) => {
+  let oppPieceArr = piecesArr.filter((e) => e.color !== color);
+  moves.forEach((e) => {
+    for (const piece of oppPieceArr) {
+      let possibleCheck = [];
+      if (piece.name.includes("Pawn")) {
+        possibleCheck = piece.validMoves.filter(
+          (m) => m.x == e.x && m.y == e.y && m.capturable
+        );
+      } else {
+        possibleCheck = piece.validMoves.filter((m) => m.x == e.x && m.y == e.y);
+      }
+      if (possibleCheck.length) {
+       e.check = true;
+      }
+    }
+  });
+  return(moves);
+};
 class Piece {
   constructor(color, initialPos, currentPos, moves, img, name, code) {
     this.color = color;
@@ -47,14 +405,6 @@ class Piece {
   };
 
   calculateMoves = () => {
-    let turn = "white";
-    let king;
-    if (turn === "black") king = kb;
-    if (turn === "white") king = kw;
-    const checkingPieces = isCheck(king);
-    console.log(checkingPieces);
-    // if (checkingPieces.length > 1)
-    //   return calculateKingMoves(king, checkingPieces);
     let pieceName = this.name.split(" ")[0];
     switch (pieceName) {
       case "Pawn":
@@ -406,362 +756,4 @@ const piecesArr = [
 ];
 
 piecesArr.forEach((e) => e.displayPiece());
-
-const calculatePawnMoves = (obj) => {
-  obj.moves = [];
-  if (obj.color === "black") {
-    if (
-      obj.initialPos.x === obj.currentPos.x &&
-      obj.initialPos.y === obj.currentPos.y
-    ) {
-      obj.moves.push({
-        x: obj.currentPos.x + 2,
-        y: obj.currentPos.y,
-      });
-    }
-    obj.moves.push({
-      x: obj.currentPos.x + 1,
-      y: obj.currentPos.y,
-    });
-    const { capture1, capture2 } = pawnCaptureMoves(obj, -1);
-    if (capture1.capturable) obj.moves.push(capture1);
-    if (capture2.capturable) obj.moves.push(capture2);
-  }
-  if (obj.color === "white") {
-    if (
-      obj.initialPos.x === obj.currentPos.x &&
-      obj.initialPos.y === obj.currentPos.y
-    ) {
-      obj.moves.push({
-        x: obj.currentPos.x - 2,
-        y: obj.currentPos.y,
-      });
-    }
-    obj.moves.push({
-      x: obj.currentPos.x - 1,
-      y: obj.currentPos.y,
-    });
-    const { capture1, capture2 } = pawnCaptureMoves(obj, 1);
-    if (capture1.capturable) obj.moves.push(capture1);
-    if (capture2.capturable) obj.moves.push(capture2);
-  }
-  obj.moves = obj.moves.filter((e) => e.x > 0 && e.x < 9 && e.y > 0 && e.y < 9);
-  const directions = { moves: obj.moves };
-  const newDirections = sortDirections(directions, obj);
-  const filteredMoves = filterMoves(newDirections, obj);
-  obj.validMoves = filteredMoves;
-};
-
-const showMoves = (event, obj) => {
-  obj.calculateMoves();
-  const { validMoves } = obj;
-
-  validMoves.forEach((e) => {
-    const box = document.querySelector(`[data-cords="${e.x},${e.y}"]`);
-    box.style.backgroundColor = "rgba(27, 156, 252,0.2)";
-    if (e.capturable) {
-      box.style.backgroundColor = "rgba(231, 76, 60,0.7)";
-    }
-    if (e.check) {
-      box.style.backgroundColor = "rgba(231, 76, 60,1)";
-    }
-  });
-};
-
-const hideMoves = (event, obj) => {
-  const { validMoves } = obj;
-  validMoves.forEach((e) => {
-    const box = document.querySelector(`[data-cords="${e.x},${e.y}"]`);
-    if ((e.x + e.y) % 2) {
-      box.style.backgroundColor = "#8bc34ac7";
-    } else {
-      box.style.backgroundColor = "#ffff004d";
-    }
-  });
-};
-
-const calculateKingMoves = (obj) => {
-  obj.moves = [];
-  let moves = [];
-  let newMoves = [];
-  const { currentPos } = obj;
-  moves.push({ x: currentPos.x + 1, y: currentPos.y + 1 });
-  moves.push({ x: currentPos.x - 1, y: currentPos.y - 1 });
-  moves.push({ x: currentPos.x + 1, y: currentPos.y });
-  moves.push({ x: currentPos.x, y: currentPos.y + 1 });
-  moves.push({ x: currentPos.x - 1, y: currentPos.y });
-  moves.push({ x: currentPos.x, y: currentPos.y - 1 });
-  moves.push({ x: currentPos.x + 1, y: currentPos.y - 1 });
-  moves.push({ x: currentPos.x - 1, y: currentPos.y + 1 });
-  moves = moves.filter((e) => e.x > 0 && e.x < 9 && e.y > 0 && e.y < 9);
-  obj.moves = (findKingMoves({moves: moves, color: obj.color}));
-
-  obj.validMoves = kFilterMoves(obj);
-};
-
-const calculateKnightMoves = (obj) => {
-  obj.moves = [];
-  const { currentPos } = obj;
-  obj.moves.push({ x: currentPos.x + 2, y: currentPos.y + 1 });
-  obj.moves.push({ x: currentPos.x + 2, y: currentPos.y - 1 });
-  obj.moves.push({ x: currentPos.x + 1, y: currentPos.y + 2 });
-  obj.moves.push({ x: currentPos.x - 1, y: currentPos.y + 2 });
-  obj.moves.push({ x: currentPos.x - 2, y: currentPos.y + 1 });
-  obj.moves.push({ x: currentPos.x - 2, y: currentPos.y - 1 });
-  obj.moves.push({ x: currentPos.x + 1, y: currentPos.y - 2 });
-  obj.moves.push({ x: currentPos.x - 1, y: currentPos.y - 2 });
-  obj.moves = obj.moves.filter((e) => e.x > 0 && e.x < 9 && e.y > 0 && e.y < 9);
-  obj.validMoves = kFilterMoves(obj);
-};
-
-const calculateRookMoves = (obj) => {
-  obj.moves = [];
-  const { currentPos } = obj;
-  for (let i = 1; i < 8; i++) {
-    let newX = currentPos.x + i;
-    if (newX > 8) {
-      newX = newX - 8;
-    }
-    obj.moves.push({ x: newX, y: currentPos.y });
-  }
-  for (let i = 1; i < 8; i++) {
-    let newY = currentPos.y + i;
-    if (newY > 8) {
-      newY = newY - 8;
-    }
-    obj.moves.push({ y: newY, x: currentPos.x });
-  }
-  const directions = splitRookDirections(obj);
-  const newDir = sortDirections(directions, obj);
-  const filteredMoves = filterMoves(newDir, obj);
-  obj.validMoves = filteredMoves;
-};
-
-const calculateBishopMoves = (obj) => {
-  obj.moves = [];
-  const { currentPos } = obj;
-  let move = 1;
-  while (move < 8) {
-    obj.moves.push({
-      x: currentPos.x + move,
-      y: currentPos.y + move,
-    });
-    move++;
-  }
-  move = 1;
-  while (move < 8) {
-    obj.moves.push({
-      x: currentPos.x - move,
-      y: currentPos.y - move,
-    });
-    move++;
-  }
-  move = 1;
-  while (move < 8) {
-    obj.moves.push({
-      x: currentPos.x + move,
-      y: currentPos.y - move,
-    });
-    move++;
-  }
-  move = 1;
-  while (move < 8) {
-    obj.moves.push({
-      x: currentPos.x - move,
-      y: currentPos.y + move,
-    });
-    move++;
-  }
-  obj.moves = obj.moves.filter((e) => e.x > 0 && e.x < 9 && e.y > 0 && e.y < 9);
-  const directions = splitBishopDirection(obj);
-  const newDir = sortDirections(directions, obj);
-  const filteredMoves = filterMoves(newDir, obj);
-  obj.validMoves = filteredMoves;
-};
-
-const calculateQueenMoves = (obj) => {
-  calculateBishopMoves(obj);
-  const { currentPos } = obj;
-  for (let i = 1; i < 8; i++) {
-    let newX = currentPos.x + i;
-    if (newX > 8) {
-      newX = newX - 8;
-    }
-    obj.moves.push({ x: newX, y: currentPos.y });
-  }
-  for (let i = 1; i < 8; i++) {
-    let newY = currentPos.y + i;
-    if (newY > 8) {
-      newY = newY - 8;
-    }
-    obj.moves.push({ y: newY, x: currentPos.x });
-  }
-  const directions = splitQueenDirection(obj);
-  const newDir = sortDirections(directions, obj);
-  const filteredMoves = filterMoves(newDir, obj);
-  obj.validMoves = filteredMoves;
-};
-
-const splitRookDirections = (obj) => {
-  const { moves } = obj;
-  const up = [],
-    down = [],
-    right = [],
-    left = [];
-  for (const m of moves) {
-    if (m.x < obj.currentPos.x && m.y === obj.currentPos.y) up.push(m);
-    if (m.x > obj.currentPos.x && m.y === obj.currentPos.y) down.push(m);
-    if (m.x === obj.currentPos.x && m.y < obj.currentPos.y) left.push(m);
-    if (m.x === obj.currentPos.x && m.y > obj.currentPos.y) right.push(m);
-  }
-  return { up, down, left, right };
-};
-
-const sortDirections = (directions, obj) => {
-  // sortFunction({x:1,y:1},{x:3,y:4},{currentPos:{x:2,y:2}})
-  const newDir = {};
-  for (const key in directions) {
-    newDir[key] = directions[key].sort((a, b) => sortFunction(b, a, obj));
-  }
-  return newDir;
-};
-
-const sortFunction = (p1, p2, obj) => {
-  return distacne(p2, obj.currentPos) - distacne(p1, obj.currentPos);
-};
-
-const distacne = (a, b) => {
-  return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
-};
-
-const filterMoves = (directions, obj) => {
-  let filteredMoves = [];
-  for (const key in directions) {
-    for (const move of directions[key]) {
-      const box = document.querySelector(`[data-cords="${move.x},${move.y}"]`);
-      const boxPieceColor = box.dataset.color; // box.getAttribute("data-color");
-      if (boxPieceColor) {
-        if (obj.name.includes("Pawn")) break;
-        const { color } = obj;
-        if (color !== boxPieceColor) {
-          filteredMoves.push({
-            ...move,
-            capturable: true,
-          });
-        }
-        if(box.dataset.code == "kw" || box.dataset.code == "kb") continue;
-        break;
-      }
-      filteredMoves.push(move);
-    }
-  }
-  return filteredMoves;
-};
-
-const splitBishopDirection = ({ moves, currentPos }) => {
-  const ur = [],
-    ul = [],
-    dr = [],
-    dl = [];
-  moves.forEach((e) => {
-    if (currentPos.x < e.x && currentPos.y > e.y) ur.push(e);
-    if (currentPos.x < e.x && currentPos.y < e.y) ul.push(e);
-    if (currentPos.x > e.x && currentPos.y > e.y) dr.push(e);
-    if (currentPos.x > e.x && currentPos.y < e.y) dl.push(e);
-  });
-  return { ur, ul, dr, dl };
-};
-
-const splitQueenDirection = ({ moves, currentPos }) => {
-  const obj = { moves, currentPos };
-  const vhDir = splitRookDirections({ moves, currentPos }); // { up, down, left, right }
-  const diagDir = splitBishopDirection(obj); // {ur,ul,dr,dl}
-  return { ...vhDir, ...diagDir };
-};
-
-const kFilterMoves = (obj) => {
-  let filteredMoves = [];
-  for (const move of obj.moves) {
-    const box = document.querySelector(`[data-cords="${move.x},${move.y}"]`);
-    const boxPieceColor = box.dataset.color; // box.getAttribute("data-color");
-    if (boxPieceColor) {
-      const { color } = obj;
-      if (color !== boxPieceColor) {
-        filteredMoves.push({
-          ...move,
-          capturable: true,
-        });
-      }
-    } else {
-      filteredMoves.push(move);
-    }
-  }
-  return filteredMoves;
-};
-
-const pawnCaptureMoves = (obj, mul) => {
-  const capture1 = { x: obj.currentPos.x - 1 * mul, y: obj.currentPos.y + 1 };
-  const capture2 = { x: obj.currentPos.x - 1 * mul, y: obj.currentPos.y - 1 };
-  capture1.capturable = true;
-  capture2.capturable = true;
-  return { capture1, capture2 };
-};
-
-const isCheck = (obj) => {
-  const oppPieceArr = piecesArr.filter(
-    (e) => e.color !== obj.color && !e.name.includes("King")
-  );
-
-  const checkingPieces = [];
-  for (const p of oppPieceArr) {
-    const captureMoves = p.validMoves.filter((e) => e.capturable);
-    for (const move of captureMoves) {
-      if (move.x == obj.currentPos.x && move.y == obj.currentPos.y) {
-        checkingPieces.push(p);
-        break;
-      }
-    }
-  }
-  return checkingPieces;
-};
-
-class Player {
-  constructor(name, time, color, turn) {
-    this.name = name;
-    this.time = time;
-    this.color = color;
-    this.turn = turn;
-    this.check = false;
-    this.mate = false;
-  }
-
-  static changeTurn(player1, player2) {
-    if (player1.turn) {
-      player1.turn = false;
-      player2.turn = true;
-    } else {
-      player1.turn = true;
-      player2.turn = false;
-    }
-  }
-}
-
-const findKingMoves = ({moves,color}) => {
-  let oppPieceArr = piecesArr.filter((e) => e.color !== color);
-  moves.forEach((e) => {
-    for (const piece of oppPieceArr) {
-      let possibleCheck = [];
-      if (piece.name.includes("Pawn")) {
-        possibleCheck = piece.validMoves.filter(
-          (m) => m.x == e.x && m.y == e.y && m.capturable
-        );
-      } else {
-        possibleCheck = piece.validMoves.filter((m) => m.x == e.x && m.y == e.y);
-      }
-      if (possibleCheck.length) {
-       e.check = true;
-      }
-    }
-  });
-  return(moves);
-};
+piecesArr.forEach((e) => e.calculateMoves());
