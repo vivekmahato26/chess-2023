@@ -24,51 +24,16 @@ const root = document.getElementById("root");
 const calculatePawnMoves = (obj) => {
   obj.moves = [];
   if (obj.color === "black") {
-    if (
-      obj.initialPos.x === obj.currentPos.x &&
-      obj.initialPos.y === obj.currentPos.y
-    ) {
-      obj.moves.push({
-        x: obj.currentPos.x + 2,
-        y: obj.currentPos.y,
-      });
-    }
-    obj.moves.push({
-      x: obj.currentPos.x + 1,
-      y: obj.currentPos.y,
-    });
-    const { capture1, capture2 } = pawnCaptureMoves(obj, -1);
-    if (capture1.capturable) obj.moves.push(capture1);
-    if (capture2.capturable) obj.moves.push(capture2);
+    pawnMoves(obj, -1);
   }
   if (obj.color === "white") {
-    if (
-      obj.initialPos.x === obj.currentPos.x &&
-      obj.initialPos.y === obj.currentPos.y
-    ) {
-      obj.moves.push({
-        x: obj.currentPos.x - 2,
-        y: obj.currentPos.y,
-      });
-    }
-    obj.moves.push({
-      x: obj.currentPos.x - 1,
-      y: obj.currentPos.y,
-    });
-    const { capture1, capture2 } = pawnCaptureMoves(obj, 1);
-    if (capture1.capturable) obj.moves.push(capture1);
-    if (capture2.capturable) obj.moves.push(capture2);
+    pawnMoves(obj, 1);
   }
-  obj.moves = obj.moves.filter((e) => e.x > 0 && e.x < 9 && e.y > 0 && e.y < 9);
-  const directions = { moves: obj.moves };
-  const newDirections = sortDirections(directions, obj);
-  const filteredMoves = filterMoves(newDirections, obj);
-  obj.validMoves = filteredMoves;
 };
 
 const showMoves = () => {
   const code = event.target.parentElement.dataset.code;
-  const obj = piecesArr.find(e => e.code == code);
+  const obj = piecesArr.find((e) => e.code == code);
   obj.calculateMoves();
   const { validMoves } = obj;
 
@@ -86,7 +51,7 @@ const showMoves = () => {
 
 const hideMoves = () => {
   const code = event.target.parentElement.dataset.code;
-  const obj = piecesArr.find(e => e.code == code);
+  const obj = piecesArr.find((e) => e.code == code);
   const { validMoves } = obj;
   validMoves.forEach((e) => {
     const box = document.querySelector(`[data-cords="${e.x},${e.y}"]`);
@@ -259,7 +224,6 @@ const filterMoves = (directions, obj) => {
       const box = document.querySelector(`[data-cords="${move.x},${move.y}"]`);
       const boxPieceColor = box.dataset.color; // box.getAttribute("data-color");
       if (boxPieceColor) {
-        if (obj.name.includes("Pawn")) break;
         const { color } = obj;
         if (color !== boxPieceColor) {
           filteredMoves.push({
@@ -317,12 +281,54 @@ const kFilterMoves = (obj) => {
   return filteredMoves;
 };
 
-const pawnCaptureMoves = (obj, mul) => {
+const pawnMoves = (obj, mul) => {
+  if (obj.currentPos.x == obj.initialPos.x) {
+    obj.moves.push({
+      x: obj.currentPos.x - 1 * mul,
+      y: obj.currentPos.y,
+    });
+    obj.moves.push({
+      x: obj.currentPos.x - 2 * mul,
+      y: obj.currentPos.y,
+    });
+  } else {
+    obj.moves.push({
+      x: obj.currentPos.x - 1 * mul,
+      y: obj.currentPos.y,
+    });
+  }
   const capture1 = { x: obj.currentPos.x - 1 * mul, y: obj.currentPos.y + 1 };
   const capture2 = { x: obj.currentPos.x - 1 * mul, y: obj.currentPos.y - 1 };
   capture1.capturable = true;
   capture2.capturable = true;
-  return { capture1, capture2 };
+  obj.moves.push(capture1)
+  obj.moves.push(capture2)
+  obj.moves = obj.moves.filter((e) => e.x > 0 && e.x < 9 && e.y > 0 && e.y < 9);
+  obj.validMoves = [];
+  for (const e of obj.moves) {
+    const box = document.querySelector(`[data-cords="${e.x},${e.y}"]`);
+    const color = box.dataset.color;
+    if (obj.currentPos.x == obj.initialPos.x) {
+      if (!color && e.x == obj.currentPos.x -1 * mul) {
+        obj.validMoves.push(e);
+      }
+      if (!color && e.x == obj.currentPos.x -2 * mul) {
+        const prevBox = document.querySelector(`[data-cords="${e.x + 1*mul},${e.y}"]`);
+        const prevColor = prevBox.dataset.color;
+        if(!prevColor) obj.validMoves.push(e);
+      }
+      if(color && color !== obj.color && e.capturable) {
+        obj.validMoves.push(e);
+      }
+    } else {
+      if(color && color !== obj.color && e.capturable) {
+        obj.validMoves.push(e);
+      }
+      if (!color) {
+        obj.validMoves.push(e);
+      }
+    }
+  }
 };
 
 const isCheck = (obj) => {
@@ -785,12 +791,6 @@ class Player {
   set capturedPiece(piece) {
     this.capturedPieces.push(piece);
   }
-  // get playerColor(){
-  //   return this.color;
-  // }
-  // get playerTurn(){
-  //   return this.turn;
-  // }
 }
 
 const player1 = new Player(player1Inp, timer, "white", true);
@@ -845,8 +845,8 @@ const movePiece = () => {
       (e) => e.currentPos.x == dest.x && e.currentPos.y == dest.y
     );
     const img = document.createElement("img");
-    img.width = "50px";
-    img.height = "50px";
+    img.style.width = "20px";
+    img.style.height = "20px";
     img.setAttribute("src", capturedP.img);
     player1Cap.style.display = "flex";
     player2Cap.style.display = "flex";
@@ -858,7 +858,7 @@ const movePiece = () => {
       player2.capturedPiece = capturedP;
       player2Cap.appendChild(img);
     }
-    root.childNodes.forEach(e => {
+    root.childNodes.forEach((e) => {
       const i = e.dataset.cords.split(",")[0];
       const j = e.dataset.cords.split(",")[1];
       if ((parseInt(i) + parseInt(j)) % 2) {
@@ -866,7 +866,7 @@ const movePiece = () => {
       } else {
         e.style.backgroundColor = "#ffff004d";
       }
-    })
+    });
     nextBox.children[0].removeEventListener("mouseenter", showMoves);
     // nextBox.children[0].removeEventListener("mouseleave", hideMoves);
     nextBox.children[0].remove();
@@ -883,4 +883,5 @@ const movePiece = () => {
   moveObj.to = "";
   Player.changeTurn(player1, player2);
   piecesArr.forEach((e) => e.calculateMoves());
+  return;
 };
