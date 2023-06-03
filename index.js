@@ -10,6 +10,7 @@ const root = document.getElementById("root");
       div.style.justifyContent = "center";
       div.style.alignItems = "center";
       div.setAttribute("data-cords", i + "," + j);
+      div.addEventListener("click", (e) => handleMove(e));
       root.appendChild(div);
       if ((i + j) % 2) {
         div.style.backgroundColor = "#8bc34ac7";
@@ -65,8 +66,10 @@ const calculatePawnMoves = (obj) => {
   obj.validMoves = filteredMoves;
 };
 
-const showMoves = (event, obj) => {
-  // obj.calculateMoves();
+const showMoves = () => {
+  const code = event.target.parentElement.dataset.code;
+  const obj = piecesArr.find(e => e.code == code);
+  obj.calculateMoves();
   const { validMoves } = obj;
 
   validMoves.forEach((e) => {
@@ -81,7 +84,9 @@ const showMoves = (event, obj) => {
   });
 };
 
-const hideMoves = (event, obj) => {
+const hideMoves = () => {
+  const code = event.target.parentElement.dataset.code;
+  const obj = piecesArr.find(e => e.code == code);
   const { validMoves } = obj;
   validMoves.forEach((e) => {
     const box = document.querySelector(`[data-cords="${e.x},${e.y}"]`);
@@ -107,8 +112,7 @@ const calculateKingMoves = (obj) => {
   moves.push({ x: currentPos.x + 1, y: currentPos.y - 1 });
   moves.push({ x: currentPos.x - 1, y: currentPos.y + 1 });
   moves = moves.filter((e) => e.x > 0 && e.x < 9 && e.y > 0 && e.y < 9);
-  obj.moves = (findKingMoves({moves: moves, color: obj.color}));
-
+  obj.moves = findKingMoves({ moves: moves, color: obj.color });
   obj.validMoves = kFilterMoves(obj);
 };
 
@@ -209,6 +213,7 @@ const calculateQueenMoves = (obj) => {
     }
     obj.moves.push({ y: newY, x: currentPos.x });
   }
+  obj.moves = obj.moves.filter((e) => e.x > 0 && e.x < 9 && e.y > 0 && e.y < 9);
   const directions = splitQueenDirection(obj);
   const newDir = sortDirections(directions, obj);
   const filteredMoves = filterMoves(newDir, obj);
@@ -262,7 +267,7 @@ const filterMoves = (directions, obj) => {
             capturable: true,
           });
         }
-        if(box.dataset.code == "kw" || box.dataset.code == "kb") continue;
+        if (box.dataset.code == "kw" || box.dataset.code == "kb") continue;
         break;
       }
       filteredMoves.push(move);
@@ -338,28 +343,7 @@ const isCheck = (obj) => {
   return checkingPieces;
 };
 
-class Player {
-  constructor(name, time, color, turn) {
-    this.name = name;
-    this.time = time;
-    this.color = color;
-    this.turn = turn;
-    this.check = false;
-    this.mate = false;
-  }
-
-  static changeTurn(player1, player2) {
-    if (player1.turn) {
-      player1.turn = false;
-      player2.turn = true;
-    } else {
-      player1.turn = true;
-      player2.turn = false;
-    }
-  }
-}
-
-const findKingMoves = ({moves,color}) => {
+const findKingMoves = ({ moves, color }) => {
   let oppPieceArr = piecesArr.filter((e) => e.color !== color);
   moves.forEach((e) => {
     for (const piece of oppPieceArr) {
@@ -369,14 +353,16 @@ const findKingMoves = ({moves,color}) => {
           (m) => m.x == e.x && m.y == e.y && m.capturable
         );
       } else {
-        possibleCheck = piece.validMoves.filter((m) => m.x == e.x && m.y == e.y);
+        possibleCheck = piece.validMoves.filter(
+          (m) => m.x == e.x && m.y == e.y
+        );
       }
       if (possibleCheck.length) {
-       e.check = true;
+        e.check = true;
       }
     }
   });
-  return(moves);
+  return moves;
 };
 class Piece {
   constructor(color, initialPos, currentPos, moves, img, name, code) {
@@ -400,8 +386,8 @@ class Piece {
     box.setAttribute("data-color", this.color);
     box.setAttribute("data-code", this.code);
     box.appendChild(img);
-    box.addEventListener("mouseenter", (event) => showMoves(event, this));
-    box.addEventListener("mouseleave", (event) => hideMoves(event, this));
+    img.addEventListener("mouseenter", showMoves);
+    img.addEventListener("mouseleave", hideMoves);
   };
 
   calculateMoves = () => {
@@ -440,8 +426,8 @@ const rx1 = new Piece(
 );
 const rx2 = new Piece(
   "black",
-  { x: 5, y: 8 },
-  { x: 5, y: 8 },
+  { x: 1, y: 8 },
+  { x: 1, y: 8 },
   [],
   "./media/b_rook.svg",
   "Rook Black 2",
@@ -458,8 +444,8 @@ const kx1 = new Piece(
 );
 const kx2 = new Piece(
   "black",
-  { x: 3, y: 6 },
-  { x: 3, y: 6 },
+  { x: 1, y: 7 },
+  { x: 1, y: 7 },
   [],
   "./media/b_knight.svg",
   "Knight Black 2",
@@ -540,8 +526,8 @@ const px4 = new Piece(
 );
 const px5 = new Piece(
   "black",
-  { x: 3, y: 5 },
-  { x: 3, y: 5 },
+  { x: 2, y: 5 },
+  { x: 2, y: 5 },
   [],
   "./media/b_pawn.svg",
   "Pawn Black 5",
@@ -703,8 +689,8 @@ const b2 = new Piece(
 );
 const kw = new Piece(
   "white",
-  { x: 5, y: 5 },
-  { x: 5, y: 5 },
+  { x: 8, y: 8 },
+  { x: 8, y: 5 },
   [],
   "./media/w_king.svg",
   "King White",
@@ -757,3 +743,144 @@ const piecesArr = [
 
 piecesArr.forEach((e) => e.displayPiece());
 piecesArr.forEach((e) => e.calculateMoves());
+
+const timerInput = document.getElementsByClassName("timerInput");
+let timer;
+
+for (const ti of timerInput) {
+  ti.addEventListener("change", (e) => {
+    if (e.target.checked) timer = e.target.value;
+  });
+}
+
+let player1Inp, player2Inp;
+
+document
+  .getElementById("playerName1")
+  .addEventListener("change", (e) => (player1Inp = e.target.value));
+document
+  .getElementById("playerName2")
+  .addEventListener("change", (e) => (player2Inp = e.target.value));
+
+class Player {
+  constructor(name, time, color, turn) {
+    this.name = name;
+    this.time = time;
+    this.color = color;
+    this.turn = turn;
+    this.check = false;
+    this.mate = false;
+    this.capturedPieces = [];
+  }
+
+  static changeTurn(player1, player2) {
+    if (player1.turn) {
+      player1.turn = false;
+      player2.turn = true;
+    } else {
+      player1.turn = true;
+      player2.turn = false;
+    }
+  }
+  set capturedPiece(piece) {
+    this.capturedPieces.push(piece);
+  }
+  // get playerColor(){
+  //   return this.color;
+  // }
+  // get playerTurn(){
+  //   return this.turn;
+  // }
+}
+
+const player1 = new Player(player1Inp, timer, "white", true);
+const player2 = new Player(player2Inp, timer, "black", false);
+const player1Cap = document.getElementById("capturedPieces1");
+const player2Cap = document.getElementById("capturedPieces2");
+
+const moveObj = {
+  selectedPiece: {},
+  to: "",
+};
+
+const handleMove = (event) => {
+  let targetBox;
+  if (event.target.dataset.cords) targetBox = event.target;
+  if (!event.target.dataset.cords) targetBox = event.target.parentElement;
+  let currentColor = "white";
+  if (player1.turn) currentColor = player1.color;
+  if (player2.turn) currentColor = player2.color;
+  const selectedColor = targetBox.dataset.color;
+  if (!moveObj.selectedPiece.cords) {
+    if (selectedColor !== currentColor) return alert("Select a valid piece");
+    moveObj.selectedPiece.cords = targetBox.dataset.cords;
+    moveObj.selectedPiece.code = targetBox.dataset.code;
+    moveObj.selectedPiece.color = targetBox.dataset.color;
+  } else {
+    moveObj.to = targetBox.dataset.cords;
+    movePiece();
+  }
+};
+
+const movePiece = () => {
+  const piece = piecesArr.filter(
+    (e) => e.code == moveObj.selectedPiece.code
+  )[0];
+  // const piece = piecesArr.find(e => e.code == moveObj.selectedPiece.code);
+  const dest = {
+    x: parseInt(moveObj.to.split(",")[0]),
+    y: parseInt(moveObj.to.split(",")[1]),
+  };
+  const checkMove = piece.validMoves.filter(
+    (e) => e.x == dest.x && e.y == dest.y
+  );
+  if (!checkMove.length) {
+    moveObj.selectedPiece = {};
+    moveObj.to = "";
+    return alert("Select valid move");
+  }
+  if (checkMove[0].capturable) {
+    const nextBox = document.querySelector(`[data-cords="${moveObj.to}"]`);
+    const capturedP = piecesArr.find(
+      (e) => e.currentPos.x == dest.x && e.currentPos.y == dest.y
+    );
+    const img = document.createElement("img");
+    img.width = "50px";
+    img.height = "50px";
+    img.setAttribute("src", capturedP.img);
+    player1Cap.style.display = "flex";
+    player2Cap.style.display = "flex";
+    if (player1.turn) {
+      player1.capturedPiece = capturedP;
+      player1Cap.appendChild(img);
+    }
+    if (player2.turn) {
+      player2.capturedPiece = capturedP;
+      player2Cap.appendChild(img);
+    }
+    root.childNodes.forEach(e => {
+      const i = e.dataset.cords.split(",")[0];
+      const j = e.dataset.cords.split(",")[1];
+      if ((parseInt(i) + parseInt(j)) % 2) {
+        e.style.backgroundColor = "#8bc34ac7";
+      } else {
+        e.style.backgroundColor = "#ffff004d";
+      }
+    })
+    nextBox.children[0].removeEventListener("mouseenter", showMoves);
+    // nextBox.children[0].removeEventListener("mouseleave", hideMoves);
+    nextBox.children[0].remove();
+  }
+  piece.currentPos = dest;
+  piece.displayPiece();
+  const prevBox = document.querySelector(
+    `[data-cords="${moveObj.selectedPiece.cords}"]`
+  );
+  prevBox.removeAttribute("data-code");
+  prevBox.removeAttribute("data-color");
+  prevBox.children[0].remove();
+  moveObj.selectedPiece = {};
+  moveObj.to = "";
+  Player.changeTurn(player1, player2);
+  piecesArr.forEach((e) => e.calculateMoves());
+};
