@@ -22,6 +22,66 @@ const root = document.getElementById("root");
   }
 })();
 
+const checkCastle = (obj) => {
+  const { color, initialmove, currentPos } = obj; // King's
+  const check = isCheck(obj);
+  if (check.length) return null;
+  if (initialmove !== null) return null;
+  const rooks = piecesArr.filter(
+    (e) => e.name.includes("Rook") && e.color == color
+    );
+  const oppPieceArr = piecesArr.filter((e) => e.color !== color);
+  const validCastleMoves = rooks.map((e) => {
+    if (e.initialmove !== null) return null;
+    let init, maxi;
+    if (e.currentPos.y < currentPos.y) {
+      init = e.currentPos.y + 1;
+      maxi = currentPos.y;
+    } else {
+      maxi = e.currentPos.y;
+      init = currentPos.y + 1;
+    }
+    for (let i = init; i < maxi; i++) {
+      const box = document.querySelector(`[data-cords="${currentPos.x},${i}"]`);
+      const boxColor = box.getAttribute("data-color");
+      if (boxColor) return null;
+      const blockedBox = oppPieceArr.filter((opp) => {
+        const checkMove = opp.validMoves.filter(
+          (m) => m.x == currentPos.x && m.y == i
+        );
+        return checkMove.length;
+      });
+      if(blockedBox.length) return null;
+    }
+    if (e.currentPos.y < currentPos.y) {
+      return {
+        rookObj: e,
+        rook: {
+          x: currentPos.x,
+          y: maxi-1,
+        },
+        king: {
+          x: currentPos.x,
+          y: maxi - 2,
+        },
+      };
+    } else {
+      return {
+        rookObj: e,
+        rook: {
+          x: currentPos.x,
+          y: maxi+1,
+        },
+        king: {
+          x: currentPos.x,
+          y: maxi +2,
+        },
+      };
+    }
+  });
+  return validCastleMoves;
+};
+
 const calculatePawnMoves = (obj) => {
   obj.moves = [];
   if (obj.color === "black") {
@@ -83,6 +143,8 @@ const calculateKingMoves = (obj) => {
   moves = moves.filter((e) => e.x > 0 && e.x < 9 && e.y > 0 && e.y < 9);
   obj.moves = findKingMoves({ moves: moves, color: obj.color });
   obj.validMoves = kFilterMoves(obj);
+  const castleMoves = checkCastle(obj)
+  obj.castleMoves = castleMoves;
 };
 
 const calculateKnightMoves = (obj) => {
@@ -382,7 +444,8 @@ const isCheck = (obj) => {
   return checkingPieces;
 };
 
-const findKingMoves = ({ moves, color }) => {
+const findKingMoves = (obj) => {
+  const { moves, color } = obj;
   let oppPieceArr = piecesArr.filter((e) => e.color !== color);
   moves.forEach((e) => {
     for (const piece of oppPieceArr) {
@@ -932,59 +995,3 @@ const movePiece = () => {
   return;
 };
 
-const checkCastle = (obj) => {
-  const { color, initialMove, currentPos } = obj; // King's
-  const check = isCheck(obj);
-  if (check.length) return null;
-  if (initialMove !== null) return null;
-  const rooks = piecesArr.filter(
-    (e) => e.name.includes("Rook") && e.color == color
-  );
-  const oppPieceArr = piecesArr.filter((e) => e.color !== color);
-  const validCastleMoves = rooks.map((e) => {
-    if (e.initialmove !== null) return null;
-    let init, maxi;
-    if (e.currentPos.y < currentPos.y) {
-      init = e.currentPos.y + 1;
-      maxi = currentPos.y;
-    } else {
-      maxi = e.currentPos.y;
-      init = currentPos.y + 1;
-    }
-    for (let i = init; i < maxi; i++) {
-      const box = document.querySelector(`[data-cords="${currentPos.x},${i}"]`);
-      if (box.dataset.color) return null;
-      const blockedBox = oppPieceArr.filter((opp) => {
-        const checkMove = opp.validMoves.filter(
-          (m) => m.x == currentPos.x && m.y == i
-        );
-        return checkMove.length;
-      });
-      if (!blockedBox.length) return null;
-    }
-    if (e.currentPos.y < currentPos.y) {
-      return {
-        rook: {
-          x: currentPos.x,
-          y: maxi-1,
-        },
-        king: {
-          x: currentPos.x,
-          y: maxi - 2,
-        },
-      };
-    } else {
-      return {
-        rook: {
-          x: currentPos.x,
-          y: maxi+1,
-        },
-        king: {
-          x: currentPos.x,
-          y: maxi +2,
-        },
-      };
-    }
-  });
-  return validCastleMoves;
-};
