@@ -931,3 +931,60 @@ const movePiece = () => {
   });
   return;
 };
+
+const checkCastle = (obj) => {
+  const { color, initialMove, currentPos } = obj; // King's
+  const check = isCheck(obj);
+  if (check.length) return null;
+  if (initialMove !== null) return null;
+  const rooks = piecesArr.filter(
+    (e) => e.name.includes("Rook") && e.color == color
+  );
+  const oppPieceArr = piecesArr.filter((e) => e.color !== color);
+  const validCastleMoves = rooks.map((e) => {
+    if (e.initialmove !== null) return null;
+    let init, maxi;
+    if (e.currentPos.y < currentPos.y) {
+      init = e.currentPos.y + 1;
+      maxi = currentPos.y;
+    } else {
+      maxi = e.currentPos.y;
+      init = currentPos.y + 1;
+    }
+    for (let i = init; i < maxi; i++) {
+      const box = document.querySelector(`[data-cords="${currentPos.x},${i}"]`);
+      if (box.dataset.color) return null;
+      const blockedBox = oppPieceArr.filter((opp) => {
+        const checkMove = opp.validMoves.filter(
+          (m) => m.x == currentPos.x && m.y == i
+        );
+        return checkMove.length;
+      });
+      if (!blockedBox.length) return null;
+    }
+    if (e.currentPos.y < currentPos.y) {
+      return {
+        rook: {
+          x: currentPos.x,
+          y: maxi-1,
+        },
+        king: {
+          x: currentPos.x,
+          y: maxi - 2,
+        },
+      };
+    } else {
+      return {
+        rook: {
+          x: currentPos.x,
+          y: maxi+1,
+        },
+        king: {
+          x: currentPos.x,
+          y: maxi +2,
+        },
+      };
+    }
+  });
+  return validCastleMoves;
+};
