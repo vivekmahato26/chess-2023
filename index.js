@@ -29,7 +29,7 @@ const checkCastle = (obj) => {
   if (initialmove !== null) return null;
   const rooks = piecesArr.filter(
     (e) => e.name.includes("Rook") && e.color == color
-    );
+  );
   const oppPieceArr = piecesArr.filter((e) => e.color !== color);
   const validCastleMoves = rooks.map((e) => {
     if (e.initialmove !== null) return null;
@@ -51,14 +51,14 @@ const checkCastle = (obj) => {
         );
         return checkMove.length;
       });
-      if(blockedBox.length) return null;
+      if (blockedBox.length) return null;
     }
     if (e.currentPos.y < currentPos.y) {
       return {
         rookObj: e,
         rook: {
           x: currentPos.x,
-          y: maxi-1,
+          y: maxi - 1,
         },
         king: {
           x: currentPos.x,
@@ -70,11 +70,11 @@ const checkCastle = (obj) => {
         rookObj: e,
         rook: {
           x: currentPos.x,
-          y: maxi+1,
+          y: maxi - 2,
         },
         king: {
           x: currentPos.x,
-          y: maxi +2,
+          y: maxi - 1,
         },
       };
     }
@@ -111,18 +111,40 @@ const showMoves = () => {
       box.style.backgroundColor = "rgba(231, 200, 60,1)";
     }
   });
+  if (obj.name.includes("King")) {
+    const { castleMoves } = obj;
+    if (!castleMoves) return;
+    castleMoves.forEach((e) => {
+      if (!e) return;
+      const { king } = e;
+      const box = document.querySelector(`[data-cords="${king.x},${king.y}"]`);
+      box.style.backgroundColor = "#70a1ff";
+    });
+    // for (const cm of castleMoves) {
+    //   if(!cm) continue;
+    // }
+  }
 };
 
 const hideMoves = () => {
-  const code = event.target.parentElement.dataset.code;
-  const obj = piecesArr.find((e) => e.code == code);
-  const { validMoves } = obj;
-  validMoves.forEach((e) => {
-    const box = document.querySelector(`[data-cords="${e.x},${e.y}"]`);
-    if ((e.x + e.y) % 2) {
-      box.style.backgroundColor = "#8bc34ac7";
+  // const code = event.target.parentElement.dataset.code;
+  // const obj = piecesArr.find((e) => e.code == code);
+  // const { validMoves } = obj;
+  // validMoves.forEach((e) => {
+  //   const box = document.querySelector(`[data-cords="${e.x},${e.y}"]`);
+  //   if ((e.x + e.y) % 2) {
+  //     box.style.backgroundColor = "#8bc34ac7";
+  //   } else {
+  //     box.style.backgroundColor = "#ffff004d";
+  //   }
+  // });
+  root.childNodes.forEach((e) => {
+    const i = e.dataset.cords.split(",")[0];
+    const j = e.dataset.cords.split(",")[1];
+    if ((parseInt(i) + parseInt(j)) % 2) {
+      e.style.backgroundColor = "#8bc34ac7";
     } else {
-      box.style.backgroundColor = "#ffff004d";
+      e.style.backgroundColor = "#ffff004d";
     }
   });
 };
@@ -143,7 +165,7 @@ const calculateKingMoves = (obj) => {
   moves = moves.filter((e) => e.x > 0 && e.x < 9 && e.y > 0 && e.y < 9);
   obj.moves = findKingMoves({ moves: moves, color: obj.color });
   obj.validMoves = kFilterMoves(obj);
-  const castleMoves = checkCastle(obj)
+  const castleMoves = checkCastle(obj);
   obj.castleMoves = castleMoves;
 };
 
@@ -920,6 +942,10 @@ const handleMove = (event) => {
   }
 };
 
+// const castleKing = (obj) => {
+
+// }
+
 const movePiece = () => {
   const piece = piecesArr.filter(
     (e) => e.code == moveObj.selectedPiece.code
@@ -929,6 +955,27 @@ const movePiece = () => {
     x: parseInt(moveObj.to.split(",")[0]),
     y: parseInt(moveObj.to.split(",")[1]),
   };
+  if (piece.name.includes("King")) {
+    if (dest.y == piece.currentPos.y + 2 || dest.y == piece.currentPos.y - 2) {
+      if (piece.castleMoves == null) return alert("Castle not possible");
+      if (piece.castleMoves.filter((e) => !e).length == 2)
+        return alert("Castle not possible");
+      const castleMove = piece.castleMoves.filter((e) => {
+        if (!e) return false;
+        if (e.king.x == dest.x && e.king.y == dest.y) return true;
+        return false;
+      });
+      if (!castleMove.length) return alert("Castle not possible");
+      piece.currentPos = dest;
+      makeMove(piece, true);
+      moveObj.selectedPiece.cords =
+        castleMove[0].rookObj.currentPos.x +
+        "," +
+        castleMove[0].rookObj.currentPos.y;
+      castleMove[0].rookObj.currentPos = castleMove[0].rook;
+      return makeMove(castleMove[0].rookObj, true);
+    }
+  }
   const checkMove = piece.validMoves.filter(
     (e) => e.x == dest.x && e.y == dest.y
   );
@@ -970,6 +1017,10 @@ const movePiece = () => {
     nextBox.children[0].remove();
   }
   piece.currentPos = dest;
+  return makeMove(piece);
+};
+
+const makeMove = (piece, castle = false) => {
   piece.displayPiece();
   const prevBox = document.querySelector(
     `[data-cords="${moveObj.selectedPiece.cords}"]`
@@ -979,7 +1030,6 @@ const movePiece = () => {
   prevBox.children[0].remove();
   moveObj.selectedPiece = {};
   moveObj.to = "";
-  Player.changeTurn(player1, player2);
   piecesArr.forEach((e) => e.calculateMoves());
   if (piece.initialmove == null) {
     piece.initialmove = true;
@@ -987,11 +1037,33 @@ const movePiece = () => {
     piece.initialmove = false;
   }
   piece.numMoves++;
-  allMoves.push({
-    color: piece.color,
-    code: piece.code,
-    move: dest,
-  });
+  if (castle) {
+    if (allMoves[allMoves.length - 1].castle) {
+      if (allMoves[allMoves.length - 1].color !== piece.color) {
+        Player.changeTurn(player1, player2);
+        allMoves.push({
+          color: piece.color,
+          code: piece.code,
+          move: piece.currentPos,
+          castle,
+        });
+      }
+    } else {
+      Player.changeTurn(player1, player2);
+      allMoves.push({
+        color: piece.color,
+        code: piece.code,
+        move: piece.currentPos,
+        castle,
+      });
+    }
+  } else {
+    Player.changeTurn(player1, player2);
+    allMoves.push({
+      color: piece.color,
+      code: piece.code,
+      move: piece.currentPos,
+    });
+  }
   return;
 };
-
