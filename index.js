@@ -1,3 +1,4 @@
+let allMoves = [];
 const root = document.getElementById("root");
 (() => {
   for (let i = 1; i < 9; i++) {
@@ -45,6 +46,9 @@ const showMoves = () => {
     }
     if (e.check) {
       box.style.backgroundColor = "rgba(231, 76, 60,1)";
+    }
+    if (e.enpassant) {
+      box.style.backgroundColor = "rgba(231, 200, 60,1)";
     }
   });
 };
@@ -301,33 +305,62 @@ const pawnMoves = (obj, mul) => {
   const capture2 = { x: obj.currentPos.x - 1 * mul, y: obj.currentPos.y - 1 };
   capture1.capturable = true;
   capture2.capturable = true;
-  obj.moves.push(capture1)
-  obj.moves.push(capture2)
+  obj.moves.push(capture1);
+  obj.moves.push(capture2);
   obj.moves = obj.moves.filter((e) => e.x > 0 && e.x < 9 && e.y > 0 && e.y < 9);
   obj.validMoves = [];
   for (const e of obj.moves) {
     const box = document.querySelector(`[data-cords="${e.x},${e.y}"]`);
     const color = box.dataset.color;
     if (obj.currentPos.x == obj.initialPos.x) {
-      if (!color && e.x == obj.currentPos.x -1 * mul) {
+      if (!color && e.x == obj.currentPos.x - 1 * mul) {
         obj.validMoves.push(e);
       }
-      if (!color && e.x == obj.currentPos.x -2 * mul) {
-        const prevBox = document.querySelector(`[data-cords="${e.x + 1*mul},${e.y}"]`);
+      if (!color && e.x == obj.currentPos.x - 2 * mul) {
+        const prevBox = document.querySelector(
+          `[data-cords="${e.x + 1 * mul},${e.y}"]`
+        );
         const prevColor = prevBox.dataset.color;
-        if(!prevColor) obj.validMoves.push(e);
+        if (!prevColor) obj.validMoves.push(e);
       }
-      if(color && color !== obj.color && e.capturable) {
+      if (color && color !== obj.color && e.capturable) {
         obj.validMoves.push(e);
       }
     } else {
-      if(color && color !== obj.color && e.capturable) {
+      if (color && color !== obj.color && e.capturable) {
         obj.validMoves.push(e);
       }
       if (!color) {
         obj.validMoves.push(e);
       }
     }
+  }
+  if (obj.initialPos.x - 3 * mul == obj.currentPos.x) {
+    const newCords = [
+      { x: obj.currentPos.x, y: obj.currentPos.y + 1 },
+      { x: obj.currentPos.x, y: obj.currentPos.y - 1 },
+    ];
+    const boxes = newCords.map((e) =>
+      document.querySelector(`[data-cords="${e.x},${e.y}"]`)
+    );
+    boxes.forEach((bx) => {
+      if (!bx) return;
+      const color = bx.dataset.color;
+      const code = bx.dataset.code;
+      const cords = bx.dataset.cords;
+      if (!bx.dataset.code) return;
+      if (!code.includes("p")) return;
+      if (color == obj.color) return;
+      const piece = piecesArr.find((e) => e.code == code);
+      if (!piece.initialmove) return;
+      if (allMoves[allMoves.length - 1].code !== code) return;
+      obj.validMoves.push({
+        x: obj.currentPos.x - 1 * mul,
+        y: parseInt(cords.split(",")[1]),
+        capturable: true,
+        enpassant: true,
+      });
+    });
   }
 };
 
@@ -380,6 +413,8 @@ class Piece {
     this.name = name;
     this.code = code;
     this.validMoves = [];
+    this.initialmove = null;
+    this.numMoves = 0;
   }
 
   displayPiece = () => {
@@ -883,5 +918,16 @@ const movePiece = () => {
   moveObj.to = "";
   Player.changeTurn(player1, player2);
   piecesArr.forEach((e) => e.calculateMoves());
+  if (piece.initialmove == null) {
+    piece.initialmove = true;
+  } else {
+    piece.initialmove = false;
+  }
+  piece.numMoves++;
+  allMoves.push({
+    color: piece.color,
+    code: piece.code,
+    move: dest,
+  });
   return;
 };
