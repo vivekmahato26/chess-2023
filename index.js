@@ -1,5 +1,105 @@
 let allMoves = [];
 const root = document.getElementById("root");
+let b_promote = 3;
+let w_promote = 3;
+const generateDropdown = (color) => {
+  const whiteImgs = [
+    {
+      img: "./media/w_queen.svg",
+      code: "qw" + w_promote,
+      name: "Queen White" + w_promote,
+    },
+    {
+      img: "./media/w_rook.svg",
+      code: "r" + w_promote,
+      name: "Rook White" + w_promote,
+    },
+    {
+      img: "./media/w_knight.svg",
+      code: "k" + w_promote,
+      name: "Knight White" + w_promote,
+    },
+    {
+      img: "./media/w_bishop.svg",
+      code: "b" + w_promote,
+      name: "Bishop White" + w_promote,
+    },
+  ];
+  const blackImgs = [
+    {
+      img: "./media/b_bishop.svg",
+      code: "bx" + b_promote,
+      name: "Bishop White",
+      b_promote,
+    },
+    {
+      img: "./media/b_knight.svg",
+      code: "kx" + b_promote,
+      name: "Knight White",
+      b_promote,
+    },
+    {
+      img: "./media/b_rook.svg",
+      code: "rx" + b_promote,
+      name: "Rook White",
+      b_promote,
+    },
+    {
+      img: "./media/b_queen.svg",
+      code: "qb" + b_promote,
+      name: "Queen White",
+      b_promote,
+    },
+  ];
+  w_promote++;
+  b_promote++;
+  const dropDownDiv = document.createElement("div");
+  let imgs = color == "white" ? whiteImgs : blackImgs;
+  imgs.forEach((piece) => {
+    const img = document.createElement("img");
+    img.setAttribute("src", piece.img);
+    img.style.width = "50px";
+    img.style.height = "50px";
+    img.setAttribute("data-color", color);
+    img.setAttribute("data-code", piece.code);
+    img.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const currentCords = e.target.parentElement.parentElement.dataset.cords;
+      const box = document.querySelector(`[data-cords="${currentCords}"]`);
+      dropDownDiv.remove();
+      const cords = currentCords.split(",");
+      const newPiece = new Piece(
+        color,
+        { x: parseInt(cords[0]), y: parseInt(cords[1]) },
+        { x: parseInt(cords[0]), y: parseInt(cords[1]) },
+        [],
+        piece.img,
+        piece.name,
+        piece.code
+      );
+      piecesArr.push(newPiece);
+      box.children[0].remove();
+      box.appendChild(img);
+      box.setAttribute("data-color", color);
+      box.setAttribute("data-code", piece.code);
+      console.log(box);
+      newPiece.calculateMoves();
+      console.log(box);
+      img.addEventListener("mouseenter", showMoves);
+      img.addEventListener("mouseleave", hideMoves);
+    });
+    dropDownDiv.appendChild(img);
+  });
+  dropDownDiv.style.position = "absolute";
+  dropDownDiv.style.top = color == "black" ? "100%" : 0;
+  dropDownDiv.style.transform =
+    color == "black" ? "translateY(-100%)" : "translateY(0)";
+  dropDownDiv.style.zIndex = 1;
+  dropDownDiv.style.backgroundColor = "#fff";
+  dropDownDiv.style.maxWidth = "80px";
+  return dropDownDiv;
+};
+
 (() => {
   for (let i = 1; i < 9; i++) {
     for (let j = 1; j < 9; j++) {
@@ -10,6 +110,7 @@ const root = document.getElementById("root");
       div.style.display = "flex";
       div.style.justifyContent = "center";
       div.style.alignItems = "center";
+      div.style.position = "relative";
       div.setAttribute("data-cords", i + "," + j);
       div.addEventListener("click", (e) => handleMove(e));
       root.appendChild(div);
@@ -95,6 +196,7 @@ const calculatePawnMoves = (obj) => {
 const showMoves = () => {
   const code = event.target.parentElement.dataset.code;
   const obj = piecesArr.find((e) => e.code == code);
+  console.log(obj, piecesArr);
   obj.calculateMoves();
   const { validMoves } = obj;
 
@@ -643,8 +745,8 @@ const px3 = new Piece(
 );
 const px4 = new Piece(
   "black",
-  { x: 2, y: 4 },
-  { x: 2, y: 4 },
+  { x: 7, y: 7 },
+  { x: 7, y: 7 },
   [],
   "./media/b_pawn.svg",
   "Pawn Black 4",
@@ -652,8 +754,8 @@ const px4 = new Piece(
 );
 const px5 = new Piece(
   "black",
-  { x: 2, y: 5 },
-  { x: 2, y: 5 },
+  { x: 7, y: 8 },
+  { x: 7, y: 8 },
   [],
   "./media/b_pawn.svg",
   "Pawn Black 5",
@@ -725,8 +827,8 @@ const p4 = new Piece(
 );
 const p5 = new Piece(
   "white",
-  { x: 7, y: 5 },
-  { x: 7, y: 5 },
+  { x: 2, y: 2 },
+  { x: 2, y: 2 },
   [],
   "./media/w_pawn.svg",
   "Pawn White 5",
@@ -734,8 +836,8 @@ const p5 = new Piece(
 );
 const p6 = new Piece(
   "white",
-  { x: 7, y: 6 },
-  { x: 7, y: 6 },
+  { x: 2, y: 1 },
+  { x: 2, y: 1 },
   [],
   "./media/w_pawn.svg",
   "Pawn White 6",
@@ -833,16 +935,16 @@ const qw = new Piece(
 );
 
 const piecesArr = [
-  rx1,
+  // rx1,
   rx2,
   bx1,
   bx2,
-  kx1,
+  // kx1,
   kx2,
   qb,
   kb,
-  px1,
-  px2,
+  // px1,
+  // px2,
   px3,
   px4,
   px5,
@@ -850,11 +952,11 @@ const piecesArr = [
   px7,
   px8,
   r1,
-  r2,
+  // r2,
   b1,
   b2,
   k1,
-  k2,
+  // k2,
   qw,
   kw,
   p1,
@@ -863,8 +965,8 @@ const piecesArr = [
   p4,
   p5,
   p6,
-  p7,
-  p8,
+  // p7,
+  // p8,
 ];
 
 piecesArr.forEach((e) => e.displayPiece());
@@ -1015,7 +1117,7 @@ const movePiece = () => {
     nextBox.children[0].removeEventListener("mouseenter", showMoves);
     // nextBox.children[0].removeEventListener("mouseleave", hideMoves);
     nextBox.children[0].remove();
-    const newArr = piecesArr.filter(e => e.code !== capturedP.code);
+    const newArr = piecesArr.filter((e) => e.code !== capturedP.code);
     piecesArr.length = 0;
     piecesArr.push(...newArr);
   }
@@ -1040,6 +1142,18 @@ const makeMove = (piece, castle = false) => {
     piece.initialmove = false;
   }
   piece.numMoves++;
+  const { color, currentPos: cp } = piece;
+  const promotionX = color == "black" ? 8 : 1;
+  if (piece.name.includes("Pawn") && piece.currentPos.x == promotionX) {
+    const box = document.querySelector(`[data-cords="${cp.x},${cp.y}"]`);
+    const newPieces = piecesArr.filter((e) => e.code !== piece.code);
+    piecesArr.length = 0;
+    piecesArr.push(...newPieces);
+    const dropDownDiv = generateDropdown(color);
+    setTimeout(() => {
+      box.appendChild(dropDownDiv);
+    }, 500);
+  }
   if (castle) {
     if (allMoves[allMoves.length - 1].castle) {
       if (allMoves[allMoves.length - 1].color !== piece.color) {
@@ -1075,35 +1189,51 @@ const makeMove = (piece, castle = false) => {
 };
 
 const checkStaleMate = () => {
-  const color = "black";
-  if(player1.turn) color = "white";
-  const king = piecesArr.find(e => e.name.includes("King") && color == e.color);
+  let color = "black";
+  if (player1.turn) color = "white";
+  const king = piecesArr.find(
+    (e) => e.name.includes("King") && color == e.color
+  );
   const check = isCheck(king);
-  if(check.length) return;
-  const pieces = piecesArr.filter(e => e.color == color);
-  const isValidMoves = pieces.filter(e => e.validMoves.length);
-  if(isValidMoves.length) return;
+  if (check.length) return;
+  const pieces = piecesArr.filter((e) => e.color == color);
+  const isValidMoves = pieces.filter((e) => e.validMoves.length);
+  if (isValidMoves.length) return;
   return alert("Stalemate");
-}
+};
 const checkMate = () => {
-  const color = "black";
-  if(player1.turn) color = "white";
-  const king = piecesArr.find(e => e.name.includes("King") && color == e.color);
+  let color = "black";
+  if (player1.turn) color = "white";
+  const king = piecesArr.find(
+    (e) => e.name.includes("King") && color == e.color
+  );
   const check = isCheck(king);
-  if(!check.length) return;
-  const pieces = piecesArr.filter(e => e.color == color);
-  const isValidMoves = pieces.filter(e => e.validMoves.length);
-  if(isValidMoves.length) return;
+  if (!check.length) return;
+  const pieces = piecesArr.filter((e) => e.color == color);
+  const isValidMoves = pieces.filter((e) => e.validMoves.length);
+  if (isValidMoves.length) return;
   return alert("Checkmate");
-}
+};
 
 const checkDraw = () => {
-  if(allMoves.length < 7) return;
+  if (allMoves.length < 7) return;
   const moves2Check = allMoves.slice(-7);
   const m0 = moves2Check[0];
   const m1 = moves2Check[1];
-  let color1Moves = moves2Check.filter(e => e.color == m0.color && e.code == m0.code && e.move.x == m0.move.x && e.move.y == m0.move.y); 
-  let color2Moves = moves2Check.filter(e => e.color == m1.color && e.code == m1.code && e.move.x == m1.move.x && e.move.y == m1.move.y); 
-  if(color1Moves.length >2) return alert("Draw")
-  if(color2Moves.length >2) return alert("Draw")
-}
+  let color1Moves = moves2Check.filter(
+    (e) =>
+      e.color == m0.color &&
+      e.code == m0.code &&
+      e.move.x == m0.move.x &&
+      e.move.y == m0.move.y
+  );
+  let color2Moves = moves2Check.filter(
+    (e) =>
+      e.color == m1.color &&
+      e.code == m1.code &&
+      e.move.x == m1.move.x &&
+      e.move.y == m1.move.y
+  );
+  if (color1Moves.length > 2) return alert("Draw");
+  if (color2Moves.length > 2) return alert("Draw");
+};
