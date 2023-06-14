@@ -742,8 +742,8 @@ const px3 = new Piece(
 );
 const px4 = new Piece(
   "black",
-  { x: 7, y: 7 },
-  { x: 7, y: 7 },
+  { x: 2, y: 4 },
+  { x: 2, y: 4 },
   [],
   "./media/b_pawn.svg",
   "Pawn Black 4",
@@ -751,8 +751,8 @@ const px4 = new Piece(
 );
 const px5 = new Piece(
   "black",
-  { x: 7, y: 8 },
-  { x: 7, y: 8 },
+  { x: 2, y: 5 },
+  { x: 2, y: 5 },
   [],
   "./media/b_pawn.svg",
   "Pawn Black 5",
@@ -824,8 +824,8 @@ const p4 = new Piece(
 );
 const p5 = new Piece(
   "white",
-  { x: 2, y: 2 },
-  { x: 2, y: 2 },
+  { x: 7, y: 5 },
+  { x: 7, y: 5 },
   [],
   "./media/w_pawn.svg",
   "Pawn White 5",
@@ -833,8 +833,8 @@ const p5 = new Piece(
 );
 const p6 = new Piece(
   "white",
-  { x: 2, y: 1 },
-  { x: 2, y: 1 },
+  { x: 7, y: 6 },
+  { x: 7, y: 6 },
   [],
   "./media/w_pawn.svg",
   "Pawn White 6",
@@ -932,16 +932,16 @@ const qw = new Piece(
 );
 
 const piecesArr = [
-  // rx1,
+  rx1,
   rx2,
   bx1,
   bx2,
-  // kx1,
+  kx1,
   kx2,
   qb,
   kb,
-  // px1,
-  // px2,
+  px1,
+  px2,
   px3,
   px4,
   px5,
@@ -949,11 +949,11 @@ const piecesArr = [
   px7,
   px8,
   r1,
-  // r2,
+  r2,
   b1,
   b2,
   k1,
-  // k2,
+  k2,
   qw,
   kw,
   p1,
@@ -962,8 +962,8 @@ const piecesArr = [
   p4,
   p5,
   p6,
-  // p7,
-  // p8,
+  p7,
+  p8,
 ];
 
 piecesArr.forEach((e) => e.displayPiece());
