@@ -82,9 +82,7 @@ const generateDropdown = (color) => {
       box.appendChild(img);
       box.setAttribute("data-color", color);
       box.setAttribute("data-code", piece.code);
-      console.log(box);
       newPiece.calculateMoves();
-      console.log(box);
       img.addEventListener("mouseenter", showMoves);
       img.addEventListener("mouseleave", hideMoves);
     });
@@ -196,10 +194,8 @@ const calculatePawnMoves = (obj) => {
 const showMoves = () => {
   const code = event.target.parentElement.dataset.code;
   const obj = piecesArr.find((e) => e.code == code);
-  console.log(obj, piecesArr);
   obj.calculateMoves();
   const { validMoves } = obj;
-
   validMoves.forEach((e) => {
     const box = document.querySelector(`[data-cords="${e.x},${e.y}"]`);
     box.style.backgroundColor = "rgba(27, 156, 252,0.2)";
