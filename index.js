@@ -45,13 +45,13 @@ const checkCastle = (obj) => {
       const box = document.querySelector(`[data-cords="${currentPos.x},${i}"]`);
       const boxColor = box.getAttribute("data-color");
       if (boxColor) return null;
-      const blockedBox = oppPieceArr.filter((opp) => {
+      const underAttack = oppPieceArr.filter((opp) => {
         const checkMove = opp.validMoves.filter(
           (m) => m.x == currentPos.x && m.y == i
         );
         return checkMove.length;
       });
-      if (blockedBox.length) return null;
+      if (underAttack.length) return null;
     }
     if (e.currentPos.y < currentPos.y) {
       return {
@@ -1015,6 +1015,9 @@ const movePiece = () => {
     nextBox.children[0].removeEventListener("mouseenter", showMoves);
     // nextBox.children[0].removeEventListener("mouseleave", hideMoves);
     nextBox.children[0].remove();
+    const newArr = piecesArr.filter(e => e.code !== capturedP.code);
+    piecesArr.length = 0;
+    piecesArr.push(...newArr);
   }
   piece.currentPos = dest;
   return makeMove(piece);
@@ -1065,5 +1068,42 @@ const makeMove = (piece, castle = false) => {
       move: piece.currentPos,
     });
   }
+  checkStaleMate();
+  checkMate();
+  checkDraw();
   return;
 };
+
+const checkStaleMate = () => {
+  const color = "black";
+  if(player1.turn) color = "white";
+  const king = piecesArr.find(e => e.name.includes("King") && color == e.color);
+  const check = isCheck(king);
+  if(check.length) return;
+  const pieces = piecesArr.filter(e => e.color == color);
+  const isValidMoves = pieces.filter(e => e.validMoves.length);
+  if(isValidMoves.length) return;
+  return alert("Stalemate");
+}
+const checkMate = () => {
+  const color = "black";
+  if(player1.turn) color = "white";
+  const king = piecesArr.find(e => e.name.includes("King") && color == e.color);
+  const check = isCheck(king);
+  if(!check.length) return;
+  const pieces = piecesArr.filter(e => e.color == color);
+  const isValidMoves = pieces.filter(e => e.validMoves.length);
+  if(isValidMoves.length) return;
+  return alert("Checkmate");
+}
+
+const checkDraw = () => {
+  if(allMoves.length < 7) return;
+  const moves2Check = allMoves.slice(-7);
+  const m0 = moves2Check[0];
+  const m1 = moves2Check[1];
+  let color1Moves = moves2Check.filter(e => e.color == m0.color && e.code == m0.code && e.move.x == m0.move.x && e.move.y == m0.move.y); 
+  let color2Moves = moves2Check.filter(e => e.color == m1.color && e.code == m1.code && e.move.x == m1.move.x && e.move.y == m1.move.y); 
+  if(color1Moves.length >2) return alert("Draw")
+  if(color2Moves.length >2) return alert("Draw")
+}
