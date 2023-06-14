@@ -194,6 +194,7 @@ const calculatePawnMoves = (obj) => {
 const showMoves = () => {
   const code = event.target.parentElement.dataset.code;
   const obj = piecesArr.find((e) => e.code == code);
+  if(!obj) return;
   obj.calculateMoves();
   const { validMoves } = obj;
   validMoves.forEach((e) => {
