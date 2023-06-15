@@ -271,6 +271,12 @@ const calculateKingMoves = (obj) => {
 const calculateKnightMoves = (obj) => {
   obj.moves = [];
   const { currentPos } = obj;
+  const king = piecesArr.filter(e => e.name.includes("King") && e.color == obj.color)[0];
+  const checkArr = isCheck(king);
+  if(checkArr.length > 1) {
+    obj.validMoves = [];
+    return;
+  }
   obj.moves.push({ x: currentPos.x + 2, y: currentPos.y + 1 });
   obj.moves.push({ x: currentPos.x + 2, y: currentPos.y - 1 });
   obj.moves.push({ x: currentPos.x + 1, y: currentPos.y + 2 });
@@ -281,6 +287,17 @@ const calculateKnightMoves = (obj) => {
   obj.moves.push({ x: currentPos.x - 1, y: currentPos.y - 2 });
   obj.moves = obj.moves.filter((e) => e.x > 0 && e.x < 9 && e.y > 0 && e.y < 9);
   obj.validMoves = kFilterMoves(obj);
+  if(checkArr.length) {
+    const checkDir = findCheckDirection(checkArr[0], king);
+    const blockingMoves = obj.validMoves.filter(e => {
+      for (const move of checkDir) {
+        if(move.x == e.x && move.y == e.y) return true;
+      }
+      return false;
+    })
+    const captureMove = obj.validMoves.filter(e => checkArr[0].currentPos.x == e.x && checkArr[0].currentPos.y == e.y);
+    obj.validMoves = [...blockingMoves, ...captureMove];
+  }
 };
 
 const calculateRookMoves = (obj) => {
@@ -406,6 +423,9 @@ const distacne = (a, b) => {
 
 const filterMoves = (directions, obj) => {
   let filteredMoves = [];
+  const king = piecesArr.filter(e => e.name.includes("King") && e.color == obj.color)[0];
+  const checkArr = isCheck(king);
+  if(checkArr.length > 1) return filteredMoves;
   for (const key in directions) {
     for (const move of directions[key]) {
       const box = document.querySelector(`[data-cords="${move.x},${move.y}"]`);
@@ -423,6 +443,17 @@ const filterMoves = (directions, obj) => {
       }
       filteredMoves.push(move);
     }
+  }
+  if(checkArr.length) {
+    const checkDir = findCheckDirection(checkArr[0], king);
+    const blockingMoves = filteredMoves.filter(e => {
+      for (const move of checkDir) {
+        if(move.x == e.x && move.y == e.y) return true;
+      }
+      return false;
+    })
+    const captureMove = filteredMoves.filter(e => checkArr[0].currentPos.x == e.x && checkArr[0].currentPos.y == e.y);
+    filteredMoves = [...blockingMoves, ...captureMove];
   }
   return filteredMoves;
 };
@@ -469,6 +500,12 @@ const kFilterMoves = (obj) => {
 };
 
 const pawnMoves = (obj, mul) => {
+  const king = piecesArr.filter(e => e.name.includes("King") && e.color == obj.color)[0];
+  const checkArr = isCheck(king);
+  if(checkArr.length > 1) {
+    obj.validMoves = [];
+    return;
+  }
   if (obj.currentPos.x == obj.initialPos.x) {
     obj.moves.push({
       x: obj.currentPos.x - 1 * mul,
@@ -545,6 +582,17 @@ const pawnMoves = (obj, mul) => {
       });
     });
   }
+  if(checkArr.length) {
+    const checkDir = findCheckDirection(checkArr[0], king);
+    const blockingMoves = obj.validMoves.filter(e => {
+      for (const move of checkDir) {
+        if(move.x == e.x && move.y == e.y) return true;
+      }
+      return false;
+    })
+    const captureMove = obj.validMoves.filter(e => checkArr[0].currentPos.x == e.x && checkArr[0].currentPos.y == e.y);
+    obj.validMoves = [...blockingMoves, ...captureMove];
+  }
 };
 
 const isCheck = (obj) => {
@@ -587,6 +635,30 @@ const findKingMoves = (obj) => {
   });
   return moves;
 };
+
+
+const findCheckDirection = (checkingPiece, king) => {
+  const {validMoves,name,currentPos} = checkingPiece;
+  const {currentPos: cpKing} = king;
+  const firstName = name.split(" ")[0];
+  let directions ={};
+  switch(firstName) {
+    case "Rook": directions = splitRookDirections({moves: validMoves,currentPos}); break;
+    case "Bishop": directions = splitBishopDirection({moves: validMoves, currentPos}); break;
+    case "Queen": directions = splitQueenDirection({moves: validMoves, currentPos}); break;
+    case "Knight": return [];
+    case "Pawn": return [];
+  }
+  for (const dir in directions) {
+    const movesArr = directions[dir];
+    if(movesArr.length == 0) continue;
+    for (const m of movesArr) {
+      if(cpKing.x == m.x && cpKing.y == m.y) return movesArr;
+    }
+  }
+  return [];
+}
+
 class Piece {
   constructor(color, initialPos, currentPos, moves, img, name, code) {
     this.color = color;
@@ -617,6 +689,14 @@ class Piece {
 
   calculateMoves = () => {
     let pieceName = this.name.split(" ")[0];
+    const king = piecesArr.filter(e => e.name.includes("King") && this.color == e.color)[0];
+    const check = isCheck(king);
+    if(check.length > 1) {
+      piecesArr.forEach(e => {
+        e.validMoves = [];
+        if(e.name.includes("King")) calculateKingMoves(e);
+      })
+    }
     switch (pieceName) {
       case "Pawn":
         calculatePawnMoves(this);
