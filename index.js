@@ -2,7 +2,7 @@ let allMoves = [];
 const root = document.getElementById("root");
 let b_promote = 3;
 let w_promote = 3;
-const generateDropdown = (color) => {
+const generateDropdown = (color,pos) => {
   const whiteImgs = [
     {
       img: "./media/w_queen.svg",
@@ -63,8 +63,8 @@ const generateDropdown = (color) => {
     img.setAttribute("data-color", color);
     img.setAttribute("data-code", piece.code);
     img.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const currentCords = e.target.parentElement.parentElement.dataset.cords;
+      // e.stopPropagation();
+      const currentCords = pos.dataset.cords;
       const box = document.querySelector(`[data-cords="${currentCords}"]`);
       dropDownDiv.remove();
       const cords = currentCords.split(",");
@@ -1226,7 +1226,7 @@ const makeMove = (piece, castle = false) => {
     const newPieces = piecesArr.filter((e) => e.code !== piece.code);
     piecesArr.length = 0;
     piecesArr.push(...newPieces);
-    const dropDownDiv = generateDropdown(color);
+    const dropDownDiv = generateDropdown(color,box);
     setTimeout(() => {
       box.appendChild(dropDownDiv);
     }, 500);
